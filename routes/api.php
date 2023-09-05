@@ -11,4 +11,5 @@ Route::post('logout', [AuthController::class,'logout']);
 
 Route::middleware('auth:api')->group( function () {
     Route::post('/verifiable_file',[FileVerificationController::class,'verifyFile']);
+    Route::get('/file_analysis',[FileVerificationController::class,'getAnalysisFile']);
 });

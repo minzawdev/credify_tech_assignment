@@ -8,8 +8,9 @@ use App\Http\Requests\FileRequest;
 use App\Traits\HashTrait;
 use App\Traits\TransformTrait;
 use App\Traits\VerifyTrait;
-use App\Http\Resources\VerifiableFileResource;
 use App\Models\VerifiableAnalysis;
+use App\Http\Resources\VerifiableFileResource;
+use App\Http\Resources\FileAnalysisResource;
 
 class FileVerificationController extends Controller
 {
@@ -19,8 +20,6 @@ class FileVerificationController extends Controller
     {
         $validated        = $request->validated();
         $requestData      = $validated['data'];
-        $fileID           = $requestData['id'];
-
         $requestSignature = $validated['signature'];
 
         $issuerName       = "";
@@ -32,36 +31,29 @@ class FileVerificationController extends Controller
 
             if (!$result) {
 
-                $issuerName    = $this->getIssuerName($requestData['issuer']);
+                $issuerName    = $this->issuerName($requestData['issuer']);
                 $transformData = $this->flattenArrayKeys($requestData);
                 $hashedData    = $this->hashTransformData($transformData);
                 $result        = $this->verifySignature($hashedData, $requestSignature);
-
-                $this->saveVerifyResult($fileID,$issuerName,$result);
             }
         }
+
+        VerifiableAnalysis::CREATE([
+            'user_id'   => auth()->user()->id,
+            'file_id'   => $requestData['id'],
+            'file_type' => 'json',
+            'verification_result' => ['issuer' => $issuerName, 'result' => $result]
+        ]);
 
         return new VerifiableFileResource($issuerName, $result);
     }
 
-    public function getIssuerName($issuer)
+    public function getAnalysisFile()
     {
-        if (isset($issuer) && is_array($issuer)) {
-            return $issuer['name'];
-        } else {
-            return "";
-        }
-    }
+        $analysisFiles = VerifiableAnalysis::where('user_id', auth()->user()->id)
+            ->orderBy('id', 'desc')
+            ->paginate(10);
 
-    public function saveVerifyResult($fileID,$issuerName,$result)
-    {
-        VerifiableAnalysis::CREATE([
-            'user_id'   => auth()->user()->id,
-            'file_id'   => $fileID,
-            'file_type' => 'json',
-            'result'    => json_encode([$issuerName,$result])
-        ]);
-
-        return 1;
+        return FileAnalysisResource::collection($analysisFiles);
     }
 }

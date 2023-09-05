@@ -56,4 +56,14 @@ trait VerifyTrait
             return "invalid_signature";
         }
     }
+
+    public function issuerName($issuer)
+    {
+        if (isset($issuer) && is_array($issuer)) {
+            return $issuer['name'];
+        } else {
+            return "";
+        }
+    }
+
 }

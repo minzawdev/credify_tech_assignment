@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('verifiable_analysis', function (Blueprint $table) {
             $table->id();
-            $table->string('file_id');
+            $table->string('file_id')->nullable();
             $table->integer('user_id');
             $table->string('file_type')->default('json');
-            $table->json('result');
+            $table->json('verification_result')->nullable();
             $table->timestamps();
         });
     }
